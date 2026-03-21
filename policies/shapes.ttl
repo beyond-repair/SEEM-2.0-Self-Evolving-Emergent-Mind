@@ -1,0 +1,123 @@
+# SEEM 1.7 – Core SHACL Shapes Library
+# policies/shapes.ttl
+# Version: 1.7.3 (March 2026)
+# License: MIT
+
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix seem:   <http://seem.ai/ns#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+
+# Base namespace definitions (used in RDF graphs during validation)
+seem:MemSkillRoute       a rdfs:Class .
+seem:EvolvedRoute        a rdfs:Class .
+seem:invertibilityScore  a rdf:Property ;
+    rdfs:range xsd:float .
+seem:maxResonatorIters   a rdf:Property ;
+    rdfs:range xsd:integer .
+seem:targetEnvironment   a rdf:Property ;
+    rdfs:range xsd:string .
+seem:detectedSyntax      a rdf:Property ;
+    rdfs:range xsd:string .
+seem:accessesExternalResource a rdf:Property .
+seem:location            a rdf:Property ;
+    rdfs:range xsd:string .
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 1. BaseRouteShape – Minimum requirements for any MemSkill route
+# ──────────────────────────────────────────────────────────────────────────────
+seem:BaseRouteShape
+    a sh:NodeShape ;
+    sh:targetClass seem:MemSkillRoute ;
+    sh:property [
+        sh:path seem:invertibilityScore ;
+        sh:datatype xsd:float ;
+        sh:minInclusive 0.92 ;
+        sh:message "Invertibility score must be ≥ 0.92 for production hot-path" ;
+    ] ;
+    sh:property [
+        sh:path seem:maxResonatorIters ;
+        sh:datatype xsd:integer ;
+        sh:maxInclusive 7 ;
+        sh:message "Resonator iterations capped at 7 for efficiency" ;
+    ] ;
+    sh:closed true ;
+    sh:ignoredProperties ( rdf:type ) .
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 2. PostgreSQLMigrationShape – Domain-specific syntax guard
+#   Prevents SQLite-isms from being promoted to PostgreSQL routes
+# ──────────────────────────────────────────────────────────────────────────────
+seem:PostgreSQLMigrationShape
+    a sh:NodeShape ;
+    sh:targetClass seem:EvolvedRoute ;
+    sh:sparql [
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this seem:targetEnvironment "PostgreSQL" .
+                $this seem:detectedSyntax "LIMIT_OFFSET_SQLITE" .
+            }
+        """ ;
+        sh:message "SQLite LIMIT/OFFSET syntax detected in PostgreSQL route – invalid" ;
+    ] ;
+    sh:sparql [
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this seem:targetEnvironment "PostgreSQL" .
+                FILTER NOT EXISTS { $this seem:usesOffsetFetch true }
+            }
+        """ ;
+        sh:message "PostgreSQL migration route should use OFFSET/FETCH NEXT – missing" ;
+    ] .
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 3. HotPathEfficiencyShape – Enforce computational bounds
+# ──────────────────────────────────────────────────────────────────────────────
+seem:HotPathEfficiencyShape
+    a sh:NodeShape ;
+    sh:targetClass seem:MemSkillRoute ;
+    sh:property [
+        sh:path seem:maxResonatorIters ;
+        sh:datatype xsd:integer ;
+        sh:maxInclusive 7 ;
+        sh:minInclusive 3 ;
+        sh:message "Resonator iterations must be between 3 and 7 for hot-path efficiency" ;
+    ] .
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 4. DataResidencyLocalOnly – Enforce no external resource access
+#   Critical for air-gapped/sovereign deployments
+# ──────────────────────────────────────────────────────────────────────────────
+seem:DataResidencyLocalOnly
+    a sh:NodeShape ;
+    sh:targetClass seem:MemSkillRoute ;
+    sh:sparql [
+        sh:select """
+            SELECT $this
+            WHERE {
+                $this seem:accessesExternalResource ?res .
+                FILTER NOT EXISTS { ?res seem:location "local" }
+            }
+        """ ;
+        sh:message "Route accesses non-local resource – violates data residency policy" ;
+    ] .
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 5. InvertibilityThresholdShape – Global minimum (redundant but explicit)
+# ──────────────────────────────────────────────────────────────────────────────
+seem:InvertibilityThresholdShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf seem:invertibilityScore ;
+    sh:property [
+        sh:path seem:invertibilityScore ;
+        sh:datatype xsd:float ;
+        sh:minInclusive 0.92 ;
+    ] .
+
+# Usage note:
+# In production, load all shapes into a single SHACL shapes graph:
+#   shapes_graph = Graph().parse("policies/shapes.ttl", format="turtle")
+# Then validate each route's RDF graph against it.
