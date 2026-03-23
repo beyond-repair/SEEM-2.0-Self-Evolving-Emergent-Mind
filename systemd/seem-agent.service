@@ -1,0 +1,13 @@
+[Unit]
+Description=SEEM Sovereign Cognitive Microservice
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/brian/SEEM-2.0-Self-Evolving-Emergent-Mind/seem.py daemon
+WorkingDirectory=/home/brian/SEEM-2.0-Self-Evolving-Emergent-Mind
+Restart=always
+User=brian
+Environment="API_KEY=your-secure-vsa-key-123"
+
+[Install]
+WantedBy=multi-user.target
