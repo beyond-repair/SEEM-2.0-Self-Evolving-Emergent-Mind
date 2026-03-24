@@ -157,8 +157,7 @@ class ResonatorVSA:
 
 1. Clone the repo
 ```bash
-git clone https://github.com/AtomicDreamLabs/SEEM-1.7.git
-cd SEEM-1.7
+git clone https://github.com/beyond-repair/SEEM-2.0-Self-Evolving-Emergent-Mind.git
 ```
 
 2. Start with Docker (recommended for local-first)
