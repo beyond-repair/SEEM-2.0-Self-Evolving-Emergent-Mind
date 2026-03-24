@@ -8,7 +8,9 @@ import sys
 import torch
 from datetime import datetime
 
-# Config
+# -------------------------------
+# CONFIG
+# -------------------------------
 CONFIG_PATH = "config.json"
 TWINS_DIR = "twins"
 
@@ -24,7 +26,9 @@ DAEMON_PORT = CONFIG.get("daemon_port", 5555)
 
 active_twin = "brian_new"
 
-# Placeholder VSA (replace with your full class when ready)
+# -------------------------------
+# Placeholder VSA & BaNEL (replace with your full classes later)
+# -------------------------------
 class ResonatorVSA:
     def __init__(self, dim=32768, k=256, iters=10):
         self.dim = dim
@@ -32,7 +36,7 @@ class ResonatorVSA:
         self.iters = iters
 
     def unbind(self, composite, binder, verbose=False):
-        return None, 0.9685
+        return None, 0.9685  # placeholder
 
 class BaNEL:
     def __init__(self, tau=9.0, min_invert=0.925):
@@ -41,7 +45,9 @@ class BaNEL:
 vsa = ResonatorVSA()
 banel = BaNEL()
 
-# Plugin loader
+# -------------------------------
+# Plugin Loader
+# -------------------------------
 def load_plugin(plugin_name):
     try:
         mod = __import__(f"plugins.{plugin_name}", fromlist=["execute"])
@@ -49,10 +55,12 @@ def load_plugin(plugin_name):
     except ImportError:
         return None
 
-# Simple mission execution
+# -------------------------------
+# Simple Mission Execution
+# -------------------------------
 def execute_mission(intent, twin):
-    invert = 0.9685  # placeholder
-    plugin_name = "soc_check"
+    invert = 0.9685  # placeholder - replace with real VSA computation
+    plugin_name = "soc_check"  # map from vault in full version
     plugin = load_plugin(plugin_name)
     if plugin:
         result = plugin(invert, {"intent": intent})
@@ -60,7 +68,9 @@ def execute_mission(intent, twin):
         result = "No plugin mapped."
     return {"status": "SUCCESS", "fidelity": invert, "effect": result, "twin": twin}
 
-# Daemon
+# -------------------------------
+# Daemon Mode
+# -------------------------------
 def start_daemon():
     def signal_handler(sig, frame):
         print(f"[SHUTDOWN] State Saved at {datetime.now()}")
@@ -77,7 +87,8 @@ def start_daemon():
             conn, addr = s.accept()
             with conn:
                 data = conn.recv(4096)
-                if not data: continue
+                if not data:
+                    continue
                 try:
                     req = json.loads(data)
                     if req.get("auth_token") != API_KEY:
@@ -90,7 +101,9 @@ def start_daemon():
                 except Exception as e:
                     conn.sendall(json.dumps({"status": "ERROR", "message": str(e)}).encode())
 
-# CLI commands
+# -------------------------------
+# CLI Commands
+# -------------------------------
 def cmd_init(name):
     path = f"{TWINS_DIR}/{name}"
     os.makedirs(path, exist_ok=True)
@@ -117,6 +130,9 @@ def cmd_status():
     print("Daemon Port:", DAEMON_PORT)
     print("API Key Set:", bool(API_KEY))
 
+# -------------------------------
+# Main
+# -------------------------------
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SEEM Sovereign Agent")
     subparsers = parser.add_subparsers(dest="command")
