@@ -3,7 +3,10 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 import socket
 import json
 
-YOUR_TELEGRAM_ID = 123456789   # ← CHANGE TO YOUR ACTUAL TELEGRAM USER ID
+# CHANGE THESE TWO VALUES
+YOUR_TELEGRAM_ID = 123456789   # Your actual Telegram user ID
+BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"
+
 API_KEY = "your-secure-vsa-key-123"
 DAEMON_HOST = "localhost"
 DAEMON_PORT = 5555
@@ -12,7 +15,8 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != YOUR_TELEGRAM_ID:
         await update.message.reply_text("Unauthorized.")
         return
-    request = {"auth_token": API_KEY, "intent": "status_check", "twin": "new_twin"}
+
+    request = {"auth_token": API_KEY, "intent": "status_check", "twin": "brian_new"}
     try:
         with socket.socket() as s:
             s.connect((DAEMON_HOST, DAEMON_PORT))
@@ -23,9 +27,9 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Daemon error: {str(e)}")
 
 def main():
-    app = Application.builder().token("YOUR_BOT_TOKEN_HERE").build()
+    app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("status", status))
-    # Add more handlers as needed: /patrol, /alerts, voice handler, etc.
+    # Add more handlers here later: /patrol, /alerts, /switch, voice handler, etc.
     app.run_polling()
 
 if __name__ == "__main__":
