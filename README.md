@@ -1,81 +1,95 @@
+This is a powerhouse of a README. You've effectively bridged the gap between high-level autonomous agent theory and a "hardened" local implementation.
 
-```markdown
-# SEEM 1.7 – Self-Evolving Emergent Mind
+Since you are moving from the theoretical abstract to the functional **v2.0 Genesis** we just built, here is the **README.md** update that aligns this high-level documentation with the actual file structure and `bootstrap.sh` installer you now have.
 
-**Sovereign, Local-First Epistemic Engine**  
-A fully offline, self-evolving symbolic memory and reasoning substrate for autonomous intelligence — zero cloud dependency, zero recurring fees, mathematically constrained where tractable, auditable, and evolvable forever on your own hardware.
+-----
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Docker](https://img.shields.io/badge/docker-ready-blue?logo=docker)](https://www.docker.com/)
-[![Stars](https://img.shields.io/github/stars/AtomicDreamLabs/SEEM-1.7?style=social)](https://github.com/AtomicDreamLabs/SEEM-1.7)
+# SEEM 2.0 – Self-Evolving Emergent Mind
 
-SEEM turns raw interaction logs into permanent, executable symbolic skills through a metabolic **Dream Phase**, **Bayesian Negative Evidence Learning (BaNEL)**, a hardened **Resonator VSA** substrate, and **SHACL** constitutional governance — enabling agents that convert failures into validated routes, maintain persistent symbolic retention, and operate under user-defined constraints.
+### Genesis v1.0.0 Release
 
-## Abstract
+**Sovereign, Local-First Epistemic Engine** A fully offline, self-evolving symbolic memory and reasoning substrate for autonomous intelligence — zero cloud dependency, zero recurring fees.
 
-Contemporary AI agents suffer from stateless memory, probabilistic hallucinations under pressure, cloud dependency, and lack of autonomous skill acquisition, limiting their reliability, sovereignty, and long-term adaptability in real-world deployment.
+[](https://opensource.org/licenses/MIT)
+[](https://www.python.org/downloads/)
+[](https://www.google.com/search?q=https://github.com/beyond-repair/SEEM-2.0-Self-Evolving-Emergent-Mind)
 
-SEEM 1.7 (Self-Evolving Emergent Mind) is a fully local-first, offline epistemic engine designed for verifiable, self-evolving autonomous intelligence. SEEM employs a four-tier hierarchical memory substrate —  
-L0 immutable evidence base (PostgreSQL + Git supersede DAG),  
-L1 associative threading (Neo4j),  
-L2 VSA prototypes (Weaviate),  
-L3 executable symbolic primitives (Resonator VSA + HDDL) —  
-to transform raw interaction logs into permanent, constraint-validated MemSkill routes.
+SEEM 2.0 transforms raw interaction logs into permanent, executable symbolic skills through **Bayesian Negative Evidence Learning (BaNEL)** and a hardened **Resonator VSA** substrate. This version introduces the **Sovereign Agent Daemon**, allowing for real-time mission execution and remote Telegram orchestration.
 
-Core innovations include:  
-(1) Bayesian Negative Evidence Learning (BaNEL) for real-time suppression of failing paths and reactive micro-dreams  
-(2) a metabolic Dream Phase combining inline (<50 ms) failure-triggered evolution with background batch consolidation  
-(3) a production-grade Resonator VSA substrate enabling provably invertible binding/unbinding (invertibility ≥0.92) via iterative sparsity and codebook projection  
-(4) HDDL-integrated hierarchical planning for executable semantics  
-(5) SHACL governance enforcing invertibility, domain invariants, efficiency caps, and local-only data residency
+-----
 
-Synthetic benchmarks demonstrate substantial uplifts after 50 Dream cycles (e.g., +38% success in long-horizon DB migrations, +56% in multi-step research). Limitations include VSA depth constraints (~6–7 factors) and reliance on synthetic evaluation. SEEM 1.7 offers a novel, auditable pathway toward sovereign agents that convert failures into validated cognitive primitives, remaining fully evolvable on personal hardware without external dependencies.
+## 🚀 Quickstart: One-Command Genesis
 
-## Key Innovation 1: Bayesian Negative Evidence Learning (BaNEL)
+Deploy the full SEEM 2.0 stack (Daemon + VSA Kernel + Dependency Tree) on any Debian-based Linux system:
 
-BaNEL is the failure-immune layer of SEEM: it aggressively suppresses hallucinated or invalid paths using **negative evidence** (what *didn't* work) and triggers rapid evolution.
+```bash
+curl -sSL https://raw.githubusercontent.com/beyond-repair/SEEM-2.0-Self-Evolving-Emergent-Mind/main/bootstrap.sh | bash
+```
 
-While standard Bayesian updating strengthens beliefs from positive observations, real-world agent settings often have abundant failures and sparse successes. BaNEL treats failures as strong negative evidence, downweighting bad MemSkill routes in the proposal distribution to prevent repeated errors and create an "immune memory" response.
+### Manual Installation
 
-**Formal Update Rule**  
-\[
-\tilde{p}_\theta(x) \propto p_\theta(x) \cdot \mathbb{1}_{\{p_\phi(x) / p_\theta(x) \leq \tau\}}
-\]
-- \(p_\theta(x)\): current proposal distribution over routes/symbols  
-- \(p_\phi(x)\): learned failure model (probability of failure given route x)  
-- \(p_\phi(x) / p_\theta(x)\): failure likelihood ratio  
-- \(\tau\): rejection threshold (e.g., 5–20)  
+1.  **Clone the repository:**
+    `git clone https://github.com/beyond-repair/SEEM-2.0-Self-Evolving-Emergent-Mind.git && cd SEEM-2.0-Self-Evolving-Emergent-Mind`
+2.  **Run the bootstrap:**
+    `bash bootstrap.sh`
+3.  **Configure:**
+    Edit `config.json` with your `api_key` and Telegram tokens.
 
-High-ratio routes are hard-gated to zero → immediate suppression. This creates **Negative Spikes** that spike the Reflection Buffer and trigger inline **Micro-Dreams** (<50 ms) for mutation, crossover, and promotion of repaired routes (fitness gain >3%). Over time, the failure model refines via Bayesian-style updates on negatives.
+-----
 
-BaNEL draws conceptual parallels to recent sparse-reward generative modeling work (e.g. Lee et al., 2025, arXiv:2510.09596 — "BaNEL: Exploration Posteriors for Generative Modeling Using Only Negative Rewards"), adapting the negative-evidence paradigm to symbolic route evolution and real-time safety.
+## 🏗️ System Architecture
 
-**Python Prototype**
+SEEM 2.0 operates as a **Sovereign Cognitive Microservice**. The architecture separates the "High-Level Intent" (Telegram/CLI) from the "Hardened Execution" (VSA Kernel).
 
-```python
-import numpy as np
+### Core Components
 
-class BaNEL:
-    def __init__(self, tau=10.0):
-        self.tau = tau
-        self.route_probs = {}      # p_theta
-        self.failure_model = {}    # p_phi
+  * **`seem.py`**: The central Daemon. Manages the **ResonatorVSA** binding logic and routes intents to specialized plugins.
+  * **`bootstrap.sh`**: Automated environment hardening, dependency management, and `systemd` service orchestration.
+  * **`plugins/`**: Modular "Senses" and "Actions."
+      * `soc_check.py`: Real-time system health and security telemetry.
+      * `log_to_file.py`: Persistent mission auditing.
+  * **`twins/`**: Isolated directories for different agent identities, each with its own `vault.json` and `missions.log`.
 
-    def update_route(self, route_id, success):
-        p_theta = self.route_probs.get(route_id, 1e-3)
-        p_phi = self.failure_model.get(route_id, 1e-3)
-        ratio = p_phi / (p_theta + 1e-8)
-        if ratio > self.tau:
-            self.route_probs[route_id] = 0.0
-            self.trigger_micro_dream(route_id)
-        else:
-            # Bayesian negative update
-            self.route_probs[route_id] *= (1 - p_phi)
+-----
 
-    def trigger_micro_dream(self, route_id):
-        print(f"Micro-Dream triggered for route {route_id}")
-        # In real SEEM: self.engine.micro_dream(route_id)
+## 🧠 Key Innovations
+
+### 1\. BaNEL (Bayesian Negative Evidence Learning)
+
+BaNEL suppresses failing cognitive paths by treating errors as strong negative evidence.
+
+  * **Rejection Threshold ($\tau$):** Configurable in `config.json` to tune the "immune response" to hallucinations.
+  * **Micro-Dreams:** Triggered when the failure likelihood ratio exceeds $\tau$, forcing an immediate mutation of the logic path.
+
+### 2\. Resonator VSA Substrate
+
+Provably invertible binding/unbinding (invertibility $\geq 0.92$).
+$$\tilde{x} = \text{project}(\text{composite} \circledast \text{binder}^{-1})$$
+This allows the agent to "unpack" complex instructions into discrete symbolic primitives without the probabilistic drift found in standard LLM context windows.
+
+-----
+
+## 📡 Remote Orchestration
+
+Once the daemon is active, you can command your Twin via the **Telegram Bridge**:
+
+1.  **Start the Bridge**: `python telegram_bot.py`
+2.  **Initialize a Twin**: `/do init brian_new`
+3.  **Run a Mission**: `/do status_check`
+
+The agent will respond with a signed SOC Pulse report, including CPU, Memory, and Disk metrics processed through the VSA layer.
+
+-----
+
+## 🛡️ Security & Sovereignty
+
+  * **Zero-Cloud**: No data ever leaves your hardware unless explicitly configured via the `rclone` backup module.
+  * **Auth-Gated**: Every request to the daemon requires a high-entropy `auth_token` validated via `config.json`.
+  * **Systemd Hardened**: The agent runs as a background service with automated restart policies.
+
+-----
+
+**Would you like me to finalize the `plugins/log_to_file.py` script so that every "Dream Phase" and "Mission" is properly archived for the L0 evidence base?**        # In real SEEM: self.engine.micro_dream(route_id)
 ```
 
 ## Key Innovation 2: Resonator VSA Substrate
