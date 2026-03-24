@@ -2,5 +2,5 @@
   "api_key": "your-secure-vsa-key-123",
   "daemon_port": 5555,
   "cloud_remote": "dropbox:SEEM-backups",
-  "rclone_path": "\~/.config/rclone/rclone.conf"
+  "rclone_path": "~/.config/rclone/rclone.conf"
 }
