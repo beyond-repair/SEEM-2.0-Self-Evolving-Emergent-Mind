@@ -58,6 +58,7 @@ fi
 
 # 5. Setup systemd service
 INSTALL_DIR=$(pwd)
+USER_NAME=$(whoami)
 echo "Generating systemd unit file..."
 $DRY_RUN || cat > /tmp/seem-agent.service <<EOF
 [Unit]
@@ -68,7 +69,7 @@ After=network.target
 ExecStart=/usr/bin/python3 $INSTALL_DIR/seem.py daemon
 WorkingDirectory=$INSTALL_DIR
 Restart=always
-User=$(whoami)
+User=$USER_NAME
 Environment="API_KEY=$(jq -r .api_key config.json 2>/dev/null || echo 'your-secure-vsa-key-123')"
 
 [Install]
@@ -100,4 +101,4 @@ echo "  1. Edit config.json with your real API key"
 echo "  2. Configure rclone if using cloud backup"
 echo "  3. Run: python telegram_bot.py  (in another terminal)"
 echo "  4. Text your bot: /start"
-echo "  5. Create first twin: seem init "new_twin"
+echo "  5. Create first twin: seem init brian_new"
