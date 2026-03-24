@@ -50,13 +50,13 @@ if [[ ! -f "config.json" ]]; then
   "api_key": "your-secure-vsa-key-123",
   "daemon_port": 5555,
   "cloud_remote": "dropbox:SEEM-backups",
-  "rclone_path": "\~/.config/rclone/rclone.conf"
+  "rclone_path": "~/.config/rclone/rclone.conf"
 }
 EOF
     echo "→ IMPORTANT: Edit config.json with your real API key!"
 fi
 
-# 5. Setup systemd service
+# 5. Setup systemd service (dynamic path)
 INSTALL_DIR=$(pwd)
 USER_NAME=$(whoami)
 echo "Generating systemd unit file..."
@@ -69,8 +69,10 @@ After=network.target
 ExecStart=/usr/bin/python3 $INSTALL_DIR/seem.py daemon
 WorkingDirectory=$INSTALL_DIR
 Restart=always
+RestartSec=5
 User=$USER_NAME
 Environment="API_KEY=$(jq -r .api_key config.json 2>/dev/null || echo 'your-secure-vsa-key-123')"
+Environment="PYTHONUNBUFFERED=1"
 
 [Install]
 WantedBy=multi-user.target
@@ -90,7 +92,7 @@ if [[ ! -f "$HOME/.config/rclone/rclone.conf" ]]; then
     echo "Run: rclone config   (create remote matching config.json 'cloud_remote')"
 else
     echo "rclone found. Latest backups:"
-    \( DRY_RUN || rclone ls " \)(jq -r .cloud_remote config.json)"
+    $DRY_RUN || rclone ls "$(jq -r .cloud_remote config.json)"
 fi
 
 echo ""
@@ -102,3 +104,4 @@ echo "  2. Configure rclone if using cloud backup"
 echo "  3. Run: python telegram_bot.py  (in another terminal)"
 echo "  4. Text your bot: /start"
 echo "  5. Create first twin: seem init brian_new"
+echo "  6. (Optional) sudo systemctl status seem-agent.service"
