@@ -1,6 +1,3 @@
-This is a powerhouse of a README. You've effectively bridged the gap between high-level autonomous agent theory and a "hardened" local implementation.
-
-Since you are moving from the theoretical abstract to the functional **v2.0 Genesis** we just built, here is the **README.md** update that aligns this high-level documentation with the actual file structure and `bootstrap.sh` installer you now have.
 
 -----
 
@@ -86,11 +83,6 @@ The agent will respond with a signed SOC Pulse report, including CPU, Memory, an
   * **Zero-Cloud**: No data ever leaves your hardware unless explicitly configured via the `rclone` backup module.
   * **Auth-Gated**: Every request to the daemon requires a high-entropy `auth_token` validated via `config.json`.
   * **Systemd Hardened**: The agent runs as a background service with automated restart policies.
-
------
-
-**Would you like me to finalize the `plugins/log_to_file.py` script so that every "Dream Phase" and "Mission" is properly archived for the L0 evidence base?**        # In real SEEM: self.engine.micro_dream(route_id)
-```
 
 ## Key Innovation 2: Resonator VSA Substrate
 
