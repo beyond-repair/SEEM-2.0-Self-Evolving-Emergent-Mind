@@ -32,3 +32,4 @@ twins/
 
 # Docker temp
 docker-compose.override.yml
+.env
