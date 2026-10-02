@@ -20,6 +20,8 @@ rclone.conf
 twins/
 *.log
 *.txt
+!requirements.txt
+!CLAIM_STATUS.md
 
 # IDE / editor
 .vscode/
@@ -33,3 +35,7 @@ twins/
 # Docker temp
 docker-compose.override.yml
 .env
+
+.pytest_cache/
+.coverage
+htmlcov/

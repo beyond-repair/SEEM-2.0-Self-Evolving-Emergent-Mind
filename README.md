@@ -41,10 +41,28 @@ pip install -r requirements.txt
 python core/clean_room_vsa.py
 ```
 
-## Historical quickstart (legacy only)
+## Historical Claim-0 quickstart (offline runnable sketch)
+
+Torch-free offline path. No Telegram token, no network, no cloud.
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/beyond-repair/SEEM-2.0-Self-Evolving-Emergent-Mind/main/bootstrap.sh | bash
+git clone https://github.com/beyond-repair/SEEM-2.0-Self-Evolving-Emergent-Mind.git
+cd SEEM-2.0-Self-Evolving-Emergent-Mind
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pytest -q
+python main.py
+python demo_integrated.py
+```
+
+**Limits (Claim-0):** sketch only — not AGI, not consciousness. Resonator `inv_score` is a toy metric; bind/unbind floor is the reproducible check. Telegram/systemd remain optional historical remote-control experiments and are refused offline without tokens. See [CLAIM_STATUS.md](./CLAIM_STATUS.md).
+
+Legacy bootstrap (optional daemon setup; not required for Claim-0):
+
+```bash
+# optional — needs local config; prefer main.py above
+# curl -sSL .../bootstrap.sh | bash
 ```
 
 ## What this line contributed

@@ -1,9 +1,15 @@
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
-import socket
+"""Optional Telegram remote control — NOT required for Claim-0 offline demo.
+
+Run `python main.py` / `python demo_integrated.py` without any Telegram token.
+"""
+from __future__ import annotations
+
 import json
 import logging
 import os
+import socket
+
+from offline_guard import OfflineModeError, require_telegram_token
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -30,7 +36,7 @@ def _send_daemon_request(payload: dict) -> dict:
         return {"status": "ERROR", "message": str(e)}
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start(update, context):
     if update.effective_user.id != YOUR_TELEGRAM_ID:
         await update.message.reply_text("Unauthorized.")
         return
@@ -46,7 +52,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def status(update, context):
     if update.effective_user.id != YOUR_TELEGRAM_ID:
         await update.message.reply_text("Unauthorized.")
         return
@@ -67,7 +73,7 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(msg)
 
 
-async def dream(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def dream(update, context):
     if update.effective_user.id != YOUR_TELEGRAM_ID:
         await update.message.reply_text("Unauthorized.")
         return
@@ -93,7 +99,7 @@ async def dream(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(msg)
 
 
-async def suppress(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def suppress(update, context):
     if update.effective_user.id != YOUR_TELEGRAM_ID:
         await update.message.reply_text("Unauthorized.")
         return
@@ -113,7 +119,7 @@ async def suppress(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(msg)
 
 
-async def do(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def do(update, context):
     if update.effective_user.id != YOUR_TELEGRAM_ID:
         await update.message.reply_text("Unauthorized.")
         return
@@ -140,7 +146,7 @@ async def do(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(msg)
 
 
-async def switch_twin(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def switch_twin(update, context):
     if update.effective_user.id != YOUR_TELEGRAM_ID:
         await update.message.reply_text("Unauthorized.")
         return
@@ -154,7 +160,7 @@ async def switch_twin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Switched to twin: {ACTIVE_TWIN}")
 
 
-async def failures(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def failures(update, context):
     if update.effective_user.id != YOUR_TELEGRAM_ID:
         await update.message.reply_text("Unauthorized.")
         return
@@ -181,6 +187,12 @@ async def failures(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def main():
+    try:
+        from telegram.ext import Application, CommandHandler
+    except ImportError as e:
+        raise SystemExit(
+            "python-telegram-bot not installed. Claim-0 offline path does not need it — use: python main.py"
+        ) from e
     app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -196,4 +208,9 @@ def main():
 
 
 if __name__ == "__main__":
+    try:
+        BOT_TOKEN = require_telegram_token()
+    except OfflineModeError as e:
+        print(e)
+        raise SystemExit(2)
     main()
