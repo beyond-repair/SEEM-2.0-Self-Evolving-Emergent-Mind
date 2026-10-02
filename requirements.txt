@@ -1,0 +1,3 @@
+# Claim-0 offline path (torch-free). Telegram bot extras are optional and not required.
+numpy>=1.24
+pytest>=7.0

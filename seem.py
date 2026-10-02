@@ -1,46 +1,50 @@
-# seem.py
+# seem.py — historical daemon/CLI (optional). Claim-0 offline path: main.py / demo_integrated.py
 import argparse
 import json
 import os
 import socket
 import signal
 import sys
-import torch
 from datetime import datetime
 
-from resonator_vsa import ResonatorVSA
+from resonator_vsa import ResonatorVSA, random_hv
 from banel import BaNEL
 from dream_phase import DreamPhase, DreamConfig
+import numpy as np
 
 CONFIG_PATH = "config.json"
 TWINS_DIR = "twins"
 
-if not os.path.exists(CONFIG_PATH):
-    print("Error: config.json missing. Create it from config.json.example.")
-    sys.exit(1)
-
-with open(CONFIG_PATH) as f:
-    CONFIG = json.load(f)
-
-API_KEY = CONFIG.get("api_key", "your-secure-vsa-key-123")
-DAEMON_PORT = CONFIG.get("daemon_port", 5555)
-
+CONFIG = {}
+API_KEY = "your-secure-vsa-key-123"
+DAEMON_PORT = 5555
 active_twin = "brian_new"
 
-vsa = ResonatorVSA(dim=16384, k=256, max_iters=7)
+vsa = ResonatorVSA(dim=16384, k=256, max_iters=7, codebook_size=256, seed=0)
 banel = BaNEL(tau=9.0, min_invert=0.92)
 dream_config = DreamConfig(
     micro_threshold=0.20,
-    min_invertibility=0.92,
+    min_invertibility=0.0,
+    min_bind_floor=0.85,
     micro_variant_count=5,
     batch_population_size=20,
-    batch_generations=12
+    batch_generations=12,
 )
 dream = DreamPhase(vsa, banel, vsa_dim=16384, config=dream_config)
 
-# -------------------------------
-# Plugin Loader
-# -------------------------------
+
+def load_config():
+    global CONFIG, API_KEY, DAEMON_PORT
+    if not os.path.exists(CONFIG_PATH):
+        print("Error: config.json missing. Create it from config.json.example.")
+        print("Note: Claim-0 offline demo does not need seem.py — use: python main.py")
+        sys.exit(1)
+    with open(CONFIG_PATH) as f:
+        CONFIG = json.load(f)
+    API_KEY = CONFIG.get("api_key", API_KEY)
+    DAEMON_PORT = CONFIG.get("daemon_port", DAEMON_PORT)
+
+
 def load_plugin(plugin_name):
     try:
         mod = __import__(f"plugins.{plugin_name}", fromlist=["execute"])
@@ -48,28 +52,31 @@ def load_plugin(plugin_name):
     except ImportError:
         return None
 
-def execute_mission(intent, twin):
-    vsa_hv = torch.randn(16384, dtype=torch.complex64)
-    symbol_id, invert = vsa.unbind(vsa_hv, verbose=False)
 
-    if invert < banel.min_invert:
+def execute_mission(intent, twin):
+    vsa_hv = random_hv(16384)
+    symbol_id, invert = vsa.unbind(vsa_hv, verbose=False)
+    floor = vsa.bind_unbind_floor()
+
+    if floor < banel.min_invert and invert < banel.min_invert:
         banel.record_failure(
             route_id=symbol_id,
             failure_type="low_invertibility",
-            evidence_score=1.0 - invert,
-            context={"intent": intent}
+            evidence_score=1.0 - max(invert, floor),
+            context={"intent": intent},
         )
         return {
             "status": "SUPPRESSED",
             "fidelity": invert,
+            "bind_floor": floor,
             "effect": "Route suppressed due to low invertibility",
-            "twin": twin
+            "twin": twin,
         }
 
     plugin_name = "soc_check"
     plugin = load_plugin(plugin_name)
     if plugin:
-        result = plugin(invert, {"intent": intent})
+        result = plugin(max(invert, floor), {"intent": intent})
     else:
         result = "No plugin mapped."
 
@@ -78,15 +85,16 @@ def execute_mission(intent, twin):
             route_id=symbol_id,
             failure_type="plugin_failure",
             evidence_score=0.6,
-            context={"intent": intent, "result": result}
+            context={"intent": intent, "result": result},
         )
 
     return {
         "status": "SUCCESS",
         "fidelity": invert,
+        "bind_floor": floor,
         "effect": result,
         "twin": twin,
-        "symbol_id": symbol_id
+        "symbol_id": symbol_id,
     }
 
 
@@ -94,17 +102,18 @@ def trigger_micro_dream(route_id: str):
     failure = {
         "route_id": route_id,
         "failure_type": "convergence",
-        "evidence_score": 0.3
+        "evidence_score": 0.3,
     }
     promoted = dream.micro_dream(failure)
     return {"promoted": promoted, "dream_type": "micro"}
 
 
 def trigger_batch_dream():
-    clusters = []
-    promoted = dream.batch_dream(clusters, generations=12)
+    clusters = [{"grounding_bond": 0.9, "id": "default"}]
+    promoted = dream.batch_dream(clusters, generations=4)
     summary = dream.get_dream_summary()
     return {"promoted": promoted, "summary": summary, "dream_type": "batch"}
+
 
 def start_daemon():
     def signal_handler(sig, frame):
@@ -115,7 +124,7 @@ def start_daemon():
     signal.signal(signal.SIGINT, signal_handler)
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('localhost', DAEMON_PORT))
+        s.bind(("localhost", DAEMON_PORT))
         s.listen()
         print(f"[DAEMON] Listening on localhost:{DAEMON_PORT}")
         while True:
@@ -139,21 +148,21 @@ def start_daemon():
                             "twin": twin,
                             "fidelity": vsa.dim / 1024,
                             "routes_evolved": len(dream.memskill_routes),
-                            "failures_logged": len(banel.failure_log)
+                            "failures_logged": len(banel.failure_log),
                         }
                     elif intent == "trigger_dream":
                         dream_result = trigger_batch_dream()
                         result = {
                             "status": "SUCCESS",
                             "dream_summary": dream_result["summary"],
-                            "promoted": dream_result["promoted"]
+                            "promoted": dream_result["promoted"],
                         }
                     elif intent == "list_suppressed":
                         suppressed = banel.get_suppressed_routes()
                         result = {
                             "status": "SUCCESS",
                             "suppressed_routes": suppressed,
-                            "count": len(suppressed)
+                            "count": len(suppressed),
                         }
                     elif intent == "get_failures":
                         failure_summary = {}
@@ -161,7 +170,7 @@ def start_daemon():
                             failure_summary[route_id] = banel.get_failure_summary(route_id)
                         result = {
                             "status": "SUCCESS",
-                            "failure_summary": failure_summary
+                            "failure_summary": failure_summary,
                         }
                     else:
                         result = execute_mission(intent, twin)
@@ -170,9 +179,7 @@ def start_daemon():
                 except Exception as e:
                     conn.sendall(json.dumps({"status": "ERROR", "message": str(e)}).encode())
 
-# -------------------------------
-# CLI Commands
-# -------------------------------
+
 def cmd_init(name):
     path = f"{TWINS_DIR}/{name}"
     os.makedirs(path, exist_ok=True)
@@ -180,6 +187,7 @@ def cmd_init(name):
     open(f"{path}/missions.log", "w").close()
     json.dump({"gates": {"alpha": False, "beta": False}, "vault": 0}, open(f"{path}/state.json", "w"))
     print(f"[INIT] Sovereign Identity created: {name}")
+
 
 def cmd_switch(name):
     global active_twin
@@ -189,10 +197,12 @@ def cmd_switch(name):
     else:
         print(f"[ERROR] Twin {name} not found")
 
+
 def cmd_do(intent):
     print(f"[DO] Processing intent: {intent}")
     result = execute_mission(intent, active_twin)
     print(json.dumps(result, indent=2))
+
 
 def cmd_status():
     print(f"Active Twin: {active_twin}")
@@ -201,12 +211,14 @@ def cmd_status():
     print(f"Routes Evolved: {len(dream.memskill_routes)}")
     print(f"Failures Logged: {len(banel.failure_log)}")
 
+
 def cmd_dream():
-    print(f"[DREAM] Triggering batch dream phase...")
+    print("[DREAM] Triggering batch dream phase...")
     result = trigger_batch_dream()
     print(f"Dream Summary: {json.dumps(result['summary'], indent=2)}")
     if result["promoted"]:
         print(f"Promoted Route: {result['promoted']}")
+
 
 def cmd_failures():
     print(f"[FAILURES] Recent failure summary for {active_twin}")
@@ -214,16 +226,18 @@ def cmd_failures():
         summary = banel.get_failure_summary(route_id)
         print(f"{route_id}: {summary['count']} failures, avg_score={summary.get('avg_score', 0):.3f}")
 
-# -------------------------------
-# Main
-# -------------------------------
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="SEEM Sovereign Agent")
+    load_config()
+    parser = argparse.ArgumentParser(description="SEEM Sovereign Agent (historical; prefer main.py)")
     subparsers = parser.add_subparsers(dest="command")
 
-    subparsers.add_parser("init").add_argument("name")
-    subparsers.add_parser("switch").add_argument("name")
-    subparsers.add_parser("do").add_argument("intent")
+    p_init = subparsers.add_parser("init")
+    p_init.add_argument("name")
+    p_switch = subparsers.add_parser("switch")
+    p_switch.add_argument("name")
+    p_do = subparsers.add_parser("do")
+    p_do.add_argument("intent")
     subparsers.add_parser("status")
     subparsers.add_parser("dream")
     subparsers.add_parser("failures")
